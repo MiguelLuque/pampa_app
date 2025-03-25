@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:pampa_app/core/theme/app_styles.dart';
 import 'package:pampa_app/features/home/application/category_provider.dart';
 import 'package:pampa_app/features/home/application/product_provider.dart';
-import 'package:pampa_app/features/home/domain/models/category.dart';
 
 // Provider para la categoría seleccionada actualmente
 final selectedCategoryIdProvider = StateProvider<String>((ref) => 'all');

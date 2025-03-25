@@ -4,9 +4,10 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'dart:async';
 import 'package:pampa_app/core/constants/image_paths.dart';
+import 'package:pampa_app/core/router/app_routes.dart';
 import 'package:pampa_app/core/theme/app_styles.dart';
 import 'package:pampa_app/features/home/application/product_provider.dart';
-import 'package:pampa_app/features/home/domain/models/product.dart';
+import 'package:pampa_app/core/domain/models/product.dart';
 
 class FeaturedProductsCarousel extends HookConsumerWidget {
   const FeaturedProductsCarousel({super.key});
@@ -84,6 +85,7 @@ class FeaturedProductsCarousel extends HookConsumerWidget {
                           horizontal: AppStyles.paddingMedium,
                         ),
                         child: _FeaturedProductItem(
+                          productId: product.id,
                           imageUrl: product.imageUrl,
                           name: product.name,
                           price: '${product.price}€',
@@ -148,12 +150,14 @@ class FeaturedProductsCarousel extends HookConsumerWidget {
 }
 
 class _FeaturedProductItem extends StatelessWidget {
+  final String productId;
   final String imageUrl;
   final String name;
   final String price;
   final bool isBestSeller;
 
   const _FeaturedProductItem({
+    required this.productId,
     required this.imageUrl,
     required this.name,
     required this.price,
@@ -162,61 +166,70 @@ class _FeaturedProductItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Container(
-            margin: const EdgeInsets.only(bottom: AppStyles.paddingSmall),
-            decoration: AppStyles.cardDecoration,
-            child: Stack(
-              children: [
-                // Imagen
-                ClipRRect(
-                  borderRadius: AppStyles.borderRadius,
-                  child: CachedNetworkImage(
-                    imageUrl: imageUrl,
-                    width: double.infinity,
-                    height: double.infinity,
-                    fit: BoxFit.cover,
-                    placeholder:
-                        (context, url) =>
-                            const Center(child: CircularProgressIndicator()),
-                    errorWidget:
-                        (context, url, error) => Container(
-                          color: Colors.grey[300],
-                          child: const Center(
-                            child: Icon(
-                              Icons.image_not_supported,
-                              size: AppStyles.iconSizeMedium,
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          AppRoutes.productDetail,
+          arguments: {'productId': productId},
+        );
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.only(bottom: AppStyles.paddingSmall),
+              decoration: AppStyles.cardDecoration,
+              child: Stack(
+                children: [
+                  // Imagen
+                  ClipRRect(
+                    borderRadius: AppStyles.borderRadius,
+                    child: CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                      placeholder:
+                          (context, url) =>
+                              const Center(child: CircularProgressIndicator()),
+                      errorWidget:
+                          (context, url, error) => Container(
+                            color: Colors.grey[300],
+                            child: const Center(
+                              child: Icon(
+                                Icons.image_not_supported,
+                                size: AppStyles.iconSizeMedium,
+                              ),
                             ),
                           ),
-                        ),
-                  ),
-                ),
-
-                // Badge "Más Vendido"
-                if (isBestSeller)
-                  Positioned(
-                    top: AppStyles.paddingSmall,
-                    right: AppStyles.paddingSmall,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: AppStyles.badgeDecoration,
-                      child: Text('Más Vendido', style: AppStyles.badge),
                     ),
                   ),
-              ],
+
+                  // Badge "Más Vendido"
+                  if (isBestSeller)
+                    Positioned(
+                      top: AppStyles.paddingSmall,
+                      right: AppStyles.paddingSmall,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: AppStyles.badgeDecoration,
+                        child: Text('Más Vendido', style: AppStyles.badge),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
-        ),
-        Text(name, style: AppStyles.titleSmall, textAlign: TextAlign.center),
-        const SizedBox(height: AppStyles.spacingTiny),
-        Text(price, style: AppStyles.price),
-      ],
+          Text(name, style: AppStyles.titleSmall, textAlign: TextAlign.center),
+          const SizedBox(height: AppStyles.spacingTiny),
+          Text(price, style: AppStyles.price),
+        ],
+      ),
     );
   }
 }
