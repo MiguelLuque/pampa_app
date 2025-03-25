@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:pampa_app/core/router/app_routes.dart';
 import 'package:pampa_app/core/theme/app_styles.dart';
-import 'package:pampa_app/features/home/domain/models/product.dart';
+import 'package:pampa_app/core/domain/models/product.dart';
 import 'package:pampa_app/features/home/presentation/widgets/category_section.dart';
 
 class ProductGrid extends ConsumerWidget {
@@ -76,6 +77,7 @@ class ProductGrid extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final product = products[index] as Product;
                 return _ProductCard(
+                  productId: product.id,
                   imageUrl: product.imageUrl,
                   name: product.name,
                   price: '${product.price}€',
@@ -147,11 +149,13 @@ class ProductGrid extends ConsumerWidget {
 }
 
 class _ProductCard extends StatelessWidget {
+  final String productId;
   final String imageUrl;
   final String name;
   final String price;
 
   const _ProductCard({
+    required this.productId,
     required this.imageUrl,
     required this.name,
     required this.price,
@@ -159,52 +163,61 @@ class _ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: AppStyles.borderRadius),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Imagen del producto
-          Expanded(
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
-              child: CachedNetworkImage(
-                imageUrl: imageUrl,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                placeholder:
-                    (context, url) =>
-                        const Center(child: CircularProgressIndicator()),
-                errorWidget:
-                    (context, url, error) => Container(
-                      color: Colors.grey[300],
-                      child: const Center(
-                        child: Icon(
-                          Icons.image_not_supported,
-                          size: AppStyles.iconSizeMedium,
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          AppRoutes.productDetail,
+          arguments: {'productId': productId},
+        );
+      },
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: AppStyles.borderRadius),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Imagen del producto
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+                child: CachedNetworkImage(
+                  imageUrl: imageUrl,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  placeholder:
+                      (context, url) =>
+                          const Center(child: CircularProgressIndicator()),
+                  errorWidget:
+                      (context, url, error) => Container(
+                        color: Colors.grey[300],
+                        child: const Center(
+                          child: Icon(
+                            Icons.image_not_supported,
+                            size: AppStyles.iconSizeMedium,
+                          ),
                         ),
                       ),
-                    ),
+                ),
               ),
             ),
-          ),
 
-          // Información del producto
-          Padding(
-            padding: const EdgeInsets.all(AppStyles.paddingSmall),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name, style: AppStyles.titleSmall),
-                const SizedBox(height: AppStyles.spacingTiny),
-                Text(price, style: AppStyles.price),
-              ],
+            // Información del producto
+            Padding(
+              padding: const EdgeInsets.all(AppStyles.paddingSmall),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name, style: AppStyles.titleSmall),
+                  const SizedBox(height: AppStyles.spacingTiny),
+                  Text(price, style: AppStyles.price),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

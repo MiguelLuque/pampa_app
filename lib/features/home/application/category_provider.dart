@@ -1,8 +1,8 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../data/repositories/category_repository_impl.dart';
-import '../domain/models/category.dart';
-import '../domain/repositories/category_repository.dart';
+import '../../../core/data/repositories/category_repository_impl.dart';
+import '../../../core/domain/models/category.dart';
+import '../../../core/domain/repositories/category_repository.dart';
 
 part 'category_provider.g.dart';
 

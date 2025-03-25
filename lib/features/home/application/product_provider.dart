@@ -1,8 +1,8 @@
+import 'package:pampa_app/core/domain/repositories/product_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../data/repositories/product_repository_impl.dart';
-import '../domain/models/product.dart';
-import '../domain/repositories/product_repository.dart';
+import '../../../core/data/repositories/product_repository_impl.dart';
+import '../../../core/domain/models/product.dart';
 
 part 'product_provider.g.dart';
 
