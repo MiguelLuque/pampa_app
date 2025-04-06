@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pampa_app/core/domain/models/product.dart';
+import 'package:pampa_app/features/home/application/product_provider.dart';
 import 'package:pampa_app/features/product_detail/application/product_detail_provider.dart';
 import 'package:pampa_app/features/product_detail/presentation/screens/product_detail_screen.dart';
 
@@ -60,9 +61,9 @@ class ProductDetailView extends ConsumerWidget {
         }
 
         // Actualizamos el productProvider con el producto cargado
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ref.read(productProvider.notifier).state = product;
-        });
+        // WidgetsBinding.instance.addPostFrameCallback((_) {
+        //   ref.read(productProvider.notifier).state = product;
+        // });
 
         return ProductDetailScreen(product: product);
       },

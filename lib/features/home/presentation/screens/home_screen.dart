@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:pampa_app/core/data/providers/basket_providers.dart';
 import 'package:pampa_app/core/theme/app_styles.dart';
+import 'package:pampa_app/features/basket/presentation/services/basket_service.dart';
 import 'package:pampa_app/features/home/presentation/widgets/category_section.dart';
 import 'package:pampa_app/features/home/presentation/widgets/featured_products_carousel.dart';
 import 'package:pampa_app/features/home/presentation/widgets/home_app_bar.dart';
@@ -12,6 +14,10 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final basketService = ref.watch(basketServiceProvider);
+    final basket = ref.watch(basketProvider);
+    final basketItemCount = ref.read(basketProvider.notifier).totalItems;
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: const HomeAppBar(),
@@ -20,17 +26,59 @@ class HomeScreen extends ConsumerWidget {
         currentIndex: 0,
         selectedItemColor: Theme.of(context).colorScheme.primary,
         unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_bag),
-            label: 'Carrito',
+        onTap: (index) {
+          if (index == 1) {
+            // Carrito tab
+            basketService.showBasketBottomSheet(context);
+          }
+        },
+        items: [
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Inicio',
           ),
           BottomNavigationBarItem(
+            icon: Stack(
+              alignment: Alignment.center,
+              children: [
+                const Icon(Icons.shopping_bag),
+                if (basketItemCount > 0)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        '$basketItemCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            label: 'Carrito',
+          ),
+          const BottomNavigationBarItem(
             icon: Icon(Icons.favorite),
             label: 'Favoritos',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Perfil',
+          ),
         ],
       ),
     );

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pampa_app/core/data/providers/basket_providers.dart';
 import 'package:pampa_app/core/domain/models/product.dart';
 import 'package:pampa_app/core/theme/app_styles.dart';
+import 'package:pampa_app/features/basket/presentation/services/basket_service.dart';
 import 'package:pampa_app/features/product_detail/application/product_detail_provider.dart';
 import 'package:pampa_app/features/product_detail/presentation/widgets/quantity_selector.dart';
 
@@ -63,6 +65,16 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen>
         _overlayEntry = null;
         _animationController.reset();
       }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Set current product in the provider - moved from build method
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(productDetailProvider.notifier).state = widget.product;
     });
   }
 
@@ -188,21 +200,25 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Watch product changes (for favorite status)
-    final currentProduct = ref.watch(productProvider) ?? widget.product;
+    // Watch product changes
+    final currentProduct = widget.product;
     final quantity = ref.watch(quantityProvider);
-    final cartItemCount = ref.watch(
-      cartItemCountProvider,
-    ); // Observar el contador del carrito
-
-    // Get action functions from providers
-    final toggleFavorite = ref.read(productFavoriteProvider);
-    final addToCart = ref.read(addToCartProvider);
+    final basket = ref.watch(basketProvider);
+    final basketItemCount = basket.fold(0, (sum, item) => sum + item.quantity);
 
     // Función que combina añadir al carrito con iniciar la animación
     void handleAddToCart() {
-      // Primero ejecutar la lógica de negocio
-      addToCart();
+      // Asegurarnos que el producto actual está en el provider
+      ref.read(productDetailProvider.notifier).state = currentProduct;
+
+      // Ejecutar la lógica de negocio para añadir al carrito
+      // Accedemos directamente al basketProvider para añadir el producto
+      ref
+          .read(basketProvider.notifier)
+          .addProduct(currentProduct, quantity: quantity);
+
+      // Mostrar mensaje (opcional)
+      print('Added ${quantity}x ${currentProduct.name} to cart');
 
       // Luego iniciar la animación
       _startAddToCartAnimation(currentProduct.imageUrl);
@@ -224,18 +240,15 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen>
             children: [
               IconButton(
                 key: _cartIconKey,
-                icon: const Icon(Icons.shopping_cart),
+                icon: const Icon(Icons.shopping_bag),
                 onPressed: () {
-                  // Navegar al carrito
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Carrito no implementado aún'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
+                  // Use BasketService to show basket bottom sheet
+                  ref
+                      .read(basketServiceProvider)
+                      .showBasketBottomSheet(context);
                 },
               ),
-              if (cartItemCount > 0)
+              if (basketItemCount > 0)
                 Positioned(
                   top: 5,
                   right: 5,
@@ -250,7 +263,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen>
                       minHeight: 18,
                     ),
                     child: Text(
-                      '$cartItemCount',
+                      '$basketItemCount',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
@@ -271,54 +284,28 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product Image with Favorite Icon
-                  Stack(
-                    children: [
-                      // Image
-                      currentProduct.imageUrl.isNotEmpty
-                          ? Image.network(
-                            currentProduct.imageUrl,
-                            width: double.infinity,
-                            height: 250,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Image.asset(
-                                'assets/images/placeholder.png',
-                                width: double.infinity,
-                                height: 250,
-                                fit: BoxFit.cover,
-                              );
-                            },
-                          )
-                          : Image.asset(
+                  // Product Image
+                  currentProduct.imageUrl.isNotEmpty
+                      ? Image.network(
+                        currentProduct.imageUrl,
+                        width: double.infinity,
+                        height: 250,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
                             'assets/images/placeholder.png',
                             width: double.infinity,
                             height: 250,
                             fit: BoxFit.cover,
-                          ),
-
-                      // Favorite Icon
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.8),
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            icon: Icon(
-                              currentProduct.isFavorite
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              color: theme.colorScheme.primary,
-                            ),
-                            onPressed: toggleFavorite,
-                          ),
-                        ),
+                          );
+                        },
+                      )
+                      : Image.asset(
+                        'assets/images/placeholder.png',
+                        width: double.infinity,
+                        height: 250,
+                        fit: BoxFit.cover,
                       ),
-                    ],
-                  ),
 
                   Padding(
                     padding: const EdgeInsets.all(16.0),
