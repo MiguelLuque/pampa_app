@@ -3,10 +3,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'dart:async';
-import 'package:pampa_app/core/constants/image_paths.dart';
 import 'package:pampa_app/core/theme/app_styles.dart';
 import 'package:pampa_app/features/home/application/banner_provider.dart';
-import 'package:pampa_app/features/home/domain/models/banner.dart';
 
 class MainCarousel extends HookConsumerWidget {
   const MainCarousel({super.key});
