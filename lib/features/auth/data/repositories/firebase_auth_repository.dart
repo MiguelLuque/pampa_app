@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:pampa_app/features/auth/domain/models/user.dart';
@@ -108,8 +109,10 @@ class FirebaseAuthRepository implements AuthRepository {
         // Reload user to get updated info
         await user.reload();
       }
+      User newUser = _mapFirebaseUser(_firebaseAuth.currentUser!);
+      await _createUser(newUser);
 
-      return _mapFirebaseUser(_firebaseAuth.currentUser!);
+      return newUser;
     } on firebase_auth.FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
     }
@@ -117,6 +120,14 @@ class FirebaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> signOut() async {
+    final googleSignIn = GoogleSignIn();
+    try {
+      if (await googleSignIn.isSignedIn()) {
+        await googleSignIn.disconnect();
+      }
+    } catch (_) {
+      // Ignorar si no había inicio de sesión de Google
+    }
     await _firebaseAuth.signOut();
   }
 
@@ -203,12 +214,26 @@ class FirebaseAuthRepository implements AuthRepository {
       if (userCred.user == null) {
         throw Exception('No se obtuvo usuario tras Google Sign-In');
       }
+
       await userCred.user!.reload();
-      return _mapFirebaseUser(_firebaseAuth.currentUser!);
+      User user = _mapFirebaseUser(_firebaseAuth.currentUser!);
+
+      if (userCred.additionalUserInfo?.isNewUser ?? false) {
+        await _createUser(user);
+      }
+
+      return user;
     } on firebase_auth.FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
     } catch (e) {
       throw Exception('Error inesperado en Google Sign-In: $e');
     }
+  }
+
+  Future<void> _createUser(User user) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.id)
+        .set(user.toJson());
   }
 }

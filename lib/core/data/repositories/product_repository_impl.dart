@@ -1,10 +1,13 @@
 import 'package:pampa_app/core/domain/repositories/product_repository.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/models/product.dart';
 import 'package:pampa_app/core/constants/image_paths.dart';
 
 class ProductRepositoryImpl implements ProductRepository {
-  // Mock data
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final String _collection = 'products';
+
+  // Mock data kept for reference or fallback
   final List<Product> _mockProducts = [
     Product(
       id: '1',
@@ -92,62 +95,151 @@ class ProductRepositoryImpl implements ProductRepository {
     ),
   ];
 
+  // Helper method to convert Firestore documents to Product objects
+  Product _productFromSnapshot(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+
+    return Product.fromJson({
+      'id': doc.id,
+      ...data,
+      'createdAt': data['createdAt']?.toDate().toString(),
+      'updatedAt': data['updatedAt']?.toDate().toString(),
+    });
+  }
+
   @override
   Future<List<Product>> getProducts() async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 800));
-    return _mockProducts;
+    try {
+      final snapshot =
+          await _firestore
+              .collection(_collection)
+              .where('isDeleted', isEqualTo: false)
+              .get();
+      var products =
+          snapshot.docs.map((doc) => _productFromSnapshot(doc)).toList();
+      return products;
+    } catch (e) {
+      // Fallback to mock data in case of error
+      return [];
+    }
   }
 
   @override
   Future<List<Product>> getFeaturedProducts() async {
-    await Future.delayed(const Duration(milliseconds: 600));
-    return _mockProducts.where((product) => product.isFeatured).toList();
+    try {
+      final snapshot =
+          await _firestore
+              .collection(_collection)
+              .where('isFeatured', isEqualTo: true)
+              .where('isDeleted', isEqualTo: false)
+              .get();
+
+      var products =
+          snapshot.docs.map((doc) => _productFromSnapshot(doc)).toList();
+      return products;
+    } catch (e) {
+      //imprime el error
+      print(e);
+      // Fallback to mock data in case of error
+      return _mockProducts.where((product) => product.isFeatured).toList();
+    }
   }
 
   @override
   Future<Product?> getProductById(String id) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return _mockProducts.firstWhere(
-      (product) => product.id == id,
-      orElse: () => throw Exception('Product not found'),
-    );
+    try {
+      final doc = await _firestore.collection(_collection).doc(id).get();
+
+      if (!doc.exists) {
+        throw Exception('Product not found');
+      }
+
+      return _productFromSnapshot(doc);
+    } catch (e) {
+      // Fallback to mock data
+      try {
+        return _mockProducts.firstWhere(
+          (product) => product.id == id,
+          orElse: () => throw Exception('Product not found'),
+        );
+      } catch (e) {
+        rethrow;
+      }
+    }
   }
 
   @override
   Future<List<Product>> getProductsByCategory(String categoryId) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return _mockProducts
-        .where((product) => product.category == categoryId)
-        .toList();
+    try {
+      final snapshot =
+          await _firestore
+              .collection(_collection)
+              .where('category', isEqualTo: categoryId)
+              .where('isDeleted', isEqualTo: false)
+              .get();
+
+      var products =
+          snapshot.docs.map((doc) => _productFromSnapshot(doc)).toList();
+      return products;
+    } catch (e) {
+      // Fallback to mock data
+      return _mockProducts
+          .where((product) => product.category == categoryId)
+          .toList();
+    }
   }
 
   @override
   Future<Product> toggleFavorite(String id, {required bool isFavorite}) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 300));
+    try {
+      // Get the product to update
+      final doc = await _firestore.collection(_collection).doc(id).get();
 
-    // Find the product index
-    final index = _mockProducts.indexWhere((product) => product.id == id);
+      if (!doc.exists) {
+        throw Exception('Product not found');
+      }
 
-    if (index == -1) {
-      throw Exception('Product not found');
+      // Update the favorite status
+      await _firestore.collection(_collection).doc(id).update({
+        'isFavorite': isFavorite,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Get the updated product
+      final updatedDoc = await _firestore.collection(_collection).doc(id).get();
+      return _productFromSnapshot(updatedDoc);
+    } catch (e) {
+      // Fallback to mock data
+      final index = _mockProducts.indexWhere((product) => product.id == id);
+
+      if (index == -1) {
+        throw Exception('Product not found');
+      }
+
+      final updatedProduct = _mockProducts[index].copyWith(
+        isFavorite: isFavorite,
+      );
+
+      _mockProducts[index] = updatedProduct;
+
+      return updatedProduct;
     }
-
-    // Update the product with the new favorite status
-    final updatedProduct = _mockProducts[index].copyWith(
-      isFavorite: isFavorite,
-    );
-
-    // Update the product in the list
-    _mockProducts[index] = updatedProduct;
-
-    return updatedProduct;
   }
 
   @override
   Future<List<Product>> getFavoriteProducts() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return _mockProducts.where((product) => product.isFavorite).toList();
+    try {
+      final snapshot =
+          await _firestore
+              .collection(_collection)
+              .where('isFavorite', isEqualTo: true)
+              .where('isDeleted', isEqualTo: false)
+              .get();
+
+      return snapshot.docs.map((doc) => _productFromSnapshot(doc)).toList();
+    } catch (e) {
+      // Fallback to mock data
+      return _mockProducts.where((product) => product.isFavorite).toList();
+    }
   }
 }
