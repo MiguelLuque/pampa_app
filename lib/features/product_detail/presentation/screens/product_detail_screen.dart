@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pampa_app/core/data/providers/basket_providers.dart';
 import 'package:pampa_app/core/domain/models/product.dart';
-import 'package:pampa_app/core/theme/app_styles.dart';
 import 'package:pampa_app/features/basket/presentation/services/basket_service.dart';
 import 'package:pampa_app/features/product_detail/application/product_detail_provider.dart';
 import 'package:pampa_app/features/product_detail/presentation/widgets/quantity_selector.dart';
@@ -221,7 +220,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen>
       print('Added ${quantity}x ${currentProduct.name} to cart');
 
       // Luego iniciar la animación
-      _startAddToCartAnimation(currentProduct.imageUrl);
+      //_startAddToCartAnimation(currentProduct.imageUrl);
     }
 
     return Scaffold(

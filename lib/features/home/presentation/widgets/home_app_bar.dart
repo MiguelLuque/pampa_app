@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:pampa_app/core/constants/image_paths.dart';
 import 'package:pampa_app/core/theme/app_styles.dart';
+import 'package:pampa_app/features/auth/application/auth_provider.dart';
+import 'package:pampa_app/features/home/presentation/widgets/logout_dialog.dart';
 
-class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
+class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const HomeAppBar({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return AppBar(
       backgroundColor: Theme.of(context).colorScheme.primary,
       title: Row(
