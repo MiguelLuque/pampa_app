@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:pampa_app/core/data/providers/basket_providers.dart';
+import 'package:pampa_app/core/router/app_routes.dart';
 import 'package:pampa_app/core/theme/app_styles.dart';
 
 class BasketBottomSheet extends ConsumerWidget {
@@ -196,7 +197,8 @@ class BasketBottomSheet extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.all(AppStyles.paddingMedium),
                 child: ElevatedButton(
-                  onPressed: null,
+                  onPressed:
+                      () => Navigator.pushNamed(context, AppRoutes.checkout),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Theme.of(context).colorScheme.onPrimary,

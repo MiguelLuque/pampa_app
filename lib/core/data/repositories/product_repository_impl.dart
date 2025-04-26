@@ -138,8 +138,6 @@ class ProductRepositoryImpl implements ProductRepository {
           snapshot.docs.map((doc) => _productFromSnapshot(doc)).toList();
       return products;
     } catch (e) {
-      //imprime el error
-      print(e);
       // Fallback to mock data in case of error
       return _mockProducts.where((product) => product.isFeatured).toList();
     }
