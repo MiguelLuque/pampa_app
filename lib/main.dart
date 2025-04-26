@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:pampa_app/core/error/app_error_handler.dart';
+import 'package:pampa_app/core/error/error_display_widget.dart';
 import 'package:pampa_app/core/router/app_routes.dart';
 import 'package:pampa_app/core/theme/app_theme.dart';
 import 'package:pampa_app/features/auth/presentation/screens/forgot_password_screen.dart';
@@ -13,19 +15,34 @@ import 'firebase_options.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const ProviderScope(child: MyApp()));
+
+  // Configurar el observer para Riverpod
+  final providerContainer = ProviderContainer(
+    observers: [ProviderErrorObserver()],
+  );
+
+  runApp(
+    UncontrolledProviderScope(
+      container: providerContainer,
+      child: const MyApp(),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title: 'Pampa App',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       initialRoute: AppRoutes.home,
+      // Envolver toda la aplicación con el widget de manejo de errores
+      builder: (context, child) {
+        return ErrorDisplayWidget(child: child ?? const SizedBox.shrink());
+      },
       routes: {
         AppRoutes.home: (context) => const HomeScreen(),
         AppRoutes.productDetail: (context) {

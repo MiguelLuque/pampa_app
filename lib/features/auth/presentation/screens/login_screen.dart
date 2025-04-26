@@ -15,18 +15,6 @@ class LoginScreen extends HookConsumerWidget {
     final authState = ref.watch(authStateProvider);
     final isPasswordVisible = ValueNotifier<bool>(false);
 
-    // Error handling
-    ref.listen(authStateProvider, (previous, next) {
-      if (next.hasError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error.toString()),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    });
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Iniciar Sesión'),

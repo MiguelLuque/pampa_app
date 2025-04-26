@@ -18,18 +18,6 @@ class RegisterScreen extends HookConsumerWidget {
     final isPasswordVisible = ValueNotifier<bool>(false);
     final isConfirmPasswordVisible = ValueNotifier<bool>(false);
 
-    // Error handling
-    ref.listen(authStateProvider, (previous, next) {
-      if (next != null && next.hasError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error.toString()),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    });
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Crear Cuenta'),

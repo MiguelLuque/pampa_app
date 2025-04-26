@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:pampa_app/core/error/app_error_handler.dart';
 import 'package:pampa_app/features/auth/domain/models/user.dart';
 import 'package:pampa_app/features/auth/domain/repositories/auth_repository.dart';
 
@@ -27,7 +28,11 @@ class FirebaseAuthRepository implements AuthRepository {
         updatedAt: DateTime.now(),
       );
     } catch (e) {
-      throw Exception('Error al mapear el usuario de Firebase: $e');
+      throw AppError(
+        type: ErrorType.authentication,
+        exception: e,
+        stackTrace: StackTrace.current,
+      );
     }
   }
 
@@ -38,7 +43,11 @@ class FirebaseAuthRepository implements AuthRepository {
       if (firebaseUser == null) return null;
       return _mapFirebaseUser(firebaseUser);
     } catch (e) {
-      throw Exception('Error al obtener el usuario actual: $e');
+      throw AppError(
+        type: ErrorType.authentication,
+        exception: e,
+        stackTrace: StackTrace.current,
+      );
     }
   }
 
@@ -62,8 +71,11 @@ class FirebaseAuthRepository implements AuthRepository {
 
       // Verificamos que tengamos un usuario válido
       if (userCredential.user == null) {
-        throw Exception(
-          'No se pudo obtener la información del usuario después del inicio de sesión',
+        throw AppError(
+          type: ErrorType.authentication,
+          message:
+              'No se pudo obtener la información del usuario después del inicio de sesión',
+          stackTrace: StackTrace.current,
         );
       }
 
@@ -76,14 +88,20 @@ class FirebaseAuthRepository implements AuthRepository {
       // Obtenemos el usuario actualizado
       final updatedUser = _firebaseAuth.currentUser;
       if (updatedUser == null) {
-        throw Exception('No se pudo obtener el usuario actualizado');
+        throw AppError(
+          type: ErrorType.authentication,
+          message: 'No se pudo obtener el usuario actualizado',
+          stackTrace: StackTrace.current,
+        );
       }
 
       return _mapFirebaseUser(updatedUser);
-    } on firebase_auth.FirebaseAuthException catch (e) {
-      throw _handleFirebaseAuthException(e);
     } catch (e) {
-      throw Exception('Error inesperado durante el inicio de sesión: $e');
+      throw AppError(
+        type: ErrorType.authentication,
+        exception: e,
+        stackTrace: StackTrace.current,
+      );
     }
   }
 
@@ -100,7 +118,11 @@ class FirebaseAuthRepository implements AuthRepository {
       );
       final user = userCredential.user;
       if (user == null) {
-        throw Exception('User not created');
+        throw AppError(
+          type: ErrorType.authentication,
+          message: 'No se pudo crear el usuario',
+          stackTrace: StackTrace.current,
+        );
       }
 
       // Update display name if provided
@@ -113,8 +135,13 @@ class FirebaseAuthRepository implements AuthRepository {
       await _createUser(newUser);
 
       return newUser;
-    } on firebase_auth.FirebaseAuthException catch (e) {
-      throw _handleFirebaseAuthException(e);
+    } catch (e) {
+      //quiero lanzar una exception de autenticación
+      throw AppError(
+        type: ErrorType.authentication,
+        exception: e,
+        stackTrace: StackTrace.current,
+      );
     }
   }
 
@@ -135,8 +162,12 @@ class FirebaseAuthRepository implements AuthRepository {
   Future<void> sendPasswordResetEmail({required String email}) async {
     try {
       await _firebaseAuth.sendPasswordResetEmail(email: email);
-    } on firebase_auth.FirebaseAuthException catch (e) {
-      throw _handleFirebaseAuthException(e);
+    } catch (e) {
+      throw AppError(
+        type: ErrorType.authentication,
+        exception: e,
+        stackTrace: StackTrace.current,
+      );
     }
   }
 
@@ -144,7 +175,10 @@ class FirebaseAuthRepository implements AuthRepository {
   Future<User> updateProfile({String? displayName, String? photoUrl}) async {
     final user = _firebaseAuth.currentUser;
     if (user == null) {
-      throw Exception('No authenticated user');
+      throw AppError(
+        type: ErrorType.authentication,
+        stackTrace: StackTrace.current,
+      );
     }
 
     try {
@@ -158,8 +192,12 @@ class FirebaseAuthRepository implements AuthRepository {
       // Reload user to get updated info
       await user.reload();
       return _mapFirebaseUser(_firebaseAuth.currentUser!);
-    } on firebase_auth.FirebaseAuthException catch (e) {
-      throw _handleFirebaseAuthException(e);
+    } catch (e) {
+      throw AppError(
+        type: ErrorType.authentication,
+        exception: e,
+        stackTrace: StackTrace.current,
+      );
     }
   }
 
@@ -168,42 +206,16 @@ class FirebaseAuthRepository implements AuthRepository {
     return _firebaseAuth.currentUser != null;
   }
 
-  /// Handle Firebase Authentication exceptions and map them to user-friendly exceptions
-  Exception _handleFirebaseAuthException(
-    firebase_auth.FirebaseAuthException e,
-  ) {
-    switch (e.code) {
-      case 'user-not-found':
-        return Exception(
-          'No se encontró ningún usuario con este correo electrónico',
-        );
-      case 'wrong-password':
-        return Exception('Contraseña incorrecta');
-      case 'email-already-in-use':
-        return Exception('Este correo electrónico ya está en uso');
-      case 'invalid-email':
-        return Exception('El correo electrónico no es válido');
-      case 'weak-password':
-        return Exception('La contraseña es demasiado débil');
-      case 'operation-not-allowed':
-        return Exception('Operación no permitida');
-      case 'user-disabled':
-        return Exception('Este usuario ha sido deshabilitado');
-      case 'too-many-requests':
-        return Exception('Demasiados intentos fallidos. Inténtalo más tarde');
-      case 'network-request-failed':
-        return Exception('Error de conexión. Verifica tu conexión a internet');
-      default:
-        return Exception('Error de autenticación: ${e.message}');
-    }
-  }
-
   @override
   Future<User> signInWithGoogle() async {
     try {
       final googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) {
-        throw Exception('Inicio de Google cancelado por el usuario');
+        throw AppError(
+          type: ErrorType.authentication,
+          message: 'Inicio de Google cancelado por el usuario',
+          stackTrace: StackTrace.current,
+        );
       }
       final googleAuth = await googleUser.authentication;
       final credential = firebase_auth.GoogleAuthProvider.credential(
@@ -212,7 +224,11 @@ class FirebaseAuthRepository implements AuthRepository {
       );
       final userCred = await _firebaseAuth.signInWithCredential(credential);
       if (userCred.user == null) {
-        throw Exception('No se obtuvo usuario tras Google Sign-In');
+        throw AppError(
+          type: ErrorType.authentication,
+          message: 'No se obtuvo usuario tras Google Sign-In',
+          stackTrace: StackTrace.current,
+        );
       }
 
       await userCred.user!.reload();
@@ -223,10 +239,14 @@ class FirebaseAuthRepository implements AuthRepository {
       }
 
       return user;
-    } on firebase_auth.FirebaseAuthException catch (e) {
-      throw _handleFirebaseAuthException(e);
     } catch (e) {
-      throw Exception('Error inesperado en Google Sign-In: $e');
+      //si es app error, lo lanzamos, si no, lo convertimos a app error pero si exception es null es porque el usuario ha cancelado el inicio de sesion con google
+
+      throw AppError(
+        type: ErrorType.authentication,
+        exception: e,
+        stackTrace: StackTrace.current,
+      );
     }
   }
 

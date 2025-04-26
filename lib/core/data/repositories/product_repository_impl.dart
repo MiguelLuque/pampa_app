@@ -120,6 +120,7 @@ class ProductRepositoryImpl implements ProductRepository {
       return products;
     } catch (e) {
       // Fallback to mock data in case of error
+      throw Exception(e);
       return [];
     }
   }
