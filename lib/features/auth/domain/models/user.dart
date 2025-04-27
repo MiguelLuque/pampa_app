@@ -8,6 +8,7 @@ class User with _$User {
   const factory User({
     required String id,
     required String email,
+    @Default(false) bool isAdmin,
     String? displayName,
     String? photoUrl,
     @Default(false) bool isEmailVerified,

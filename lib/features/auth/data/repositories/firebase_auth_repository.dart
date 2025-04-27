@@ -236,6 +236,9 @@ class FirebaseAuthRepository implements AuthRepository {
 
       if (userCred.additionalUserInfo?.isNewUser ?? false) {
         await _createUser(user);
+      } else {
+        //recuperamos el usuario y vemos is es admin, si lo es actualizamos el usuario que vamos a devolver
+        user = user.copyWith(isAdmin: await isAdmin(user.id));
       }
 
       return user;
@@ -248,6 +251,29 @@ class FirebaseAuthRepository implements AuthRepository {
         stackTrace: StackTrace.current,
       );
     }
+  }
+
+  //funcion que llame a la collection users y lo busque por su id
+  Future<User?> getUserById(String id) async {
+    //si no encuentra al usuario lanza un error
+
+    try {
+      final user =
+          await FirebaseFirestore.instance.collection('users').doc(id).get();
+      return user.data() != null ? User.fromJson(user.data()!) : null;
+    } catch (e) {
+      throw AppError(
+        type: ErrorType.authentication,
+        exception: e,
+        stackTrace: StackTrace.current,
+      );
+    }
+  }
+
+  //funcion que busca al usuario por id y devuelve si es admin o no
+  Future<bool> isAdmin(String id) async {
+    final user = await getUserById(id);
+    return user?.isAdmin ?? false;
   }
 
   Future<void> _createUser(User user) async {
